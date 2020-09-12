@@ -5,7 +5,7 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'nodemysql',
+  database: 'twitchbot',
 });
 db.connect((err) => {
   if (err) {
