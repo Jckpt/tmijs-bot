@@ -1,11 +1,12 @@
 const tmi = require('tmi.js');
 const mysql = require('mysql');
+const cleverbot = require('cleverbot-free');
 require('dotenv').config();
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'twitchbot',
+  database: 'nodemysql',
 });
 db.connect((err) => {
   if (err) {
@@ -19,9 +20,10 @@ db.connect((err) => {
 //   console.log(result);
 //   console.log('created table');
 // });
-
-const stinkers = ['overpow', 'randombrucetv'];
-const beOnChat = ['lukisteve', 'xayoo_'];
+var messages = [];
+const stinkers = ['overpow'];
+const beOnChat = ['xayoo_', 'lukisteve', 'krawcu_'];
+var stallTheCommand = false;
 const onSub = (channel, username, gifter) => {
   if (stinkers.includes(channel)) {
     channel = channel.substring(1);
@@ -81,18 +83,41 @@ client.on('subgift', (channel, username, streakMonths, recipient, methods, users
 });
 client.on('message', (channel, tags, message, self) => {
   channel = channel.substring(1);
+  let delay = 1500;
   if (self) return;
   if (stinkers.includes(channel)) return;
   if (
-    message.toLowerCase() === '@krawcu_bot pogchamp' ||
-    message.toLowerCase() === '@krawcu_bot, pogchamp' ||
-    message.toLowerCase() === 'krawcu_bot, pogchamp' ||
-    message.toLowerCase() === 'krawcu_bot pogchamp'
+    message.toLowerCase() === `@${process.env.BOT_USERNAME} pogchamp` ||
+    message.toLowerCase() === `@${process.env.BOT_USERNAME}, pogchamp` ||
+    message.toLowerCase() === `${process.env.BOT_USERNAME}, pogchamp` ||
+    message.toLowerCase() === `${process.env.BOT_USERNAME} pogchamp`
   ) {
     client.say(channel, `@${tags.username} PogChamp`);
   }
-
+  if (
+    message.toLowerCase() === `@${process.env.BOT_USERNAME} vislaud` ||
+    message.toLowerCase() === `@${process.env.BOT_USERNAME}, vislaud` ||
+    message.toLowerCase() === `${process.env.BOT_USERNAME}, vislaud` ||
+    message.toLowerCase() === `${process.env.BOT_USERNAME} vislaud`
+  ) {
+    client.say(channel, `@${tags.username} PogChamp`);
+  }
   if (message.toLowerCase() === '!discord' && channel === 'xayoo_') {
     client.say(channel, `@${tags.username} discord jest dostępny od trzeciego miesiąca subskrypcji!`);
   }
+  if ((channel === 'krawcu_' || channel === 'lukisteve') && message.startsWith('$m')) {
+    if (stallTheCommand === true) return;
+    message = message.substring(3);
+    cleverbot(message, messages).then((response) => {
+      messages = [...messages, message];
+      if (messages.length >= 11) {
+        messages.shift();
+      }
+      client.say(channel, `@${tags.username} ${response}`);
+    });
+  }
+  stallTheCommand = true;
+  setTimeout(() => {
+    stallTheCommand = false;
+  }, delay);
 });
