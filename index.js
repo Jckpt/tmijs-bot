@@ -6,7 +6,7 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'nodemysql',
+  database: 'twitchbot',
 });
 db.connect((err) => {
   if (err) {
@@ -21,32 +21,32 @@ db.connect((err) => {
 //   console.log('created table');
 // });
 var messages = [];
-const stinkers = ['overpow'];
+const stinkers = ['overpow', 'randombrucetv'];
 const beOnChat = ['xayoo_', 'lukisteve', 'krawcu_'];
 var stallTheCommand = false;
 const onSub = (channel, username, gifter) => {
+  channel = channel.substring(1);
+  let query = `SELECT nick, subscribed_to FROM users WHERE nick="${username}" AND subscribed_to="${channel}";`;
+  db.query(query, (err, result) => {
+    console.log(`checking if ${username} is already in database`);
+    if (err) throw err;
+    if (result.length > 0) {
+      let query = `UPDATE users SET last_updated=now(), gifted_by="${gifter}" WHERE nick="${username}" AND subscribed_to="${channel}";`;
+      db.query(query, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+      });
+    } else {
+      let query = 'INSERT INTO users SET ?, created_on=now(), last_updated=now()';
+      let user = { nick: username, subscribed_to: channel, gifted_by: gifter };
+      db.query(query, user, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+      });
+    }
+  });
+  let reason = `Sub u ${channel} 🧀`;
   if (stinkers.includes(channel)) {
-    channel = channel.substring(1);
-    let query = `SELECT nick, subscribed_to FROM users WHERE nick="${username}" AND subscribed_to="${channel}";`;
-    db.query(query, (err, result) => {
-      console.log(`checking if ${username} is already in database`);
-      if (err) throw err;
-      if (result.length > 0) {
-        let query = `UPDATE users SET last_updated=now(), gifted_by="${gifter}" WHERE nick="${username}" AND subscribed_to="${channel}";`;
-        db.query(query, (err, result) => {
-          if (err) throw err;
-          console.log(result);
-        });
-      } else {
-        let query = 'INSERT INTO users SET ?, created_on=now(), last_updated=now()';
-        let user = { nick: username, subscribed_to: channel, gifted_by: gifter };
-        db.query(query, user, (err, result) => {
-          if (err) throw err;
-          console.log(result);
-        });
-      }
-    });
-    let reason = `Sub u ${channel} 🧀`;
     beOnChat.forEach((chat) => {
       client.ban(chat, username, reason).catch((err) => {
         client
@@ -102,10 +102,7 @@ client.on('message', (channel, tags, message, self) => {
   ) {
     client.say(channel, `@${tags.username} PogChamp`);
   }
-  if (message.toLowerCase() === '!discord' && channel === 'xayoo_') {
-    client.say(channel, `@${tags.username} discord jest dostępny od trzeciego miesiąca subskrypcji!`);
-  }
-  if ((channel === 'krawcu_' || channel === 'lukisteve') && message.startsWith('$m')) {
+  if (channel === 'lukisteve' && message.startsWith('$m')) {
     if (stallTheCommand === true) return;
     message = message.substring(3);
     cleverbot(message, messages).then((response) => {
