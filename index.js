@@ -1,12 +1,12 @@
 const tmi = require('tmi.js');
 const mysql = require('mysql');
-const cleverbot = require('cleverbot-free');
+//const cleverbot = require('cleverbot-free');
 require('dotenv').config();
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'twitchbot',
+  database: 'nodemysql',
 });
 db.connect((err) => {
   if (err) {
@@ -20,11 +20,11 @@ db.connect((err) => {
 //   console.log(result);
 //   console.log('created table');
 // });
-var messages = [];
+// var messages = [];
 const stinkers = ['overpow', 'randombrucetv'];
-const beOnChat = ['xayoo_', 'lukisteve', 'krawcu_'];
+const beOnChat = ['lukisteve', 'krawcu_'];
 var stallTheCommand = false;
-const onSub = (channel, username, gifter) => {
+const onSub = (channel, username, gifter, gifted) => {
   channel = channel.substring(1);
   let query = `SELECT nick, subscribed_to FROM users WHERE nick="${username}" AND subscribed_to="${channel}";`;
   db.query(query, (err, result) => {
@@ -45,17 +45,25 @@ const onSub = (channel, username, gifter) => {
       });
     }
   });
-  let reason = `Sub u ${channel} 🧀`;
+
   if (stinkers.includes(channel)) {
     beOnChat.forEach((chat) => {
-      client.ban(chat, username, reason).catch((err) => {
-        client
-          .say(chat, gifter === null ? `${username} dostał subgift od ${gifter} na kanale ${channel} StinkyCheese` : `${username} zasubskrybował kanał ${channel} StinkyCheese`)
-          .catch((err) => {
+      if (gifted) {
+        let reason = `Sub gift u ${channel} 🧀`;
+        client.ban(chat, gifter, reason).catch((err) => {
+          client.say(chat, `${username} dostał subgift od ${gifter} na kanale ${channel} StinkyCheese`).catch((err) => {
             console.log(err);
           });
-        console.log(err);
-      });
+          console.log(err);
+        });
+      } else {
+        client.ban(chat, username, reason).catch((err) => {
+          client.say(chat, `${username} zasubskrybował kanał ${channel} StinkyCheese`).catch((err) => {
+            console.log(err);
+          });
+          console.log(err);
+        });
+      }
     });
   }
 };
@@ -73,17 +81,17 @@ const client = new tmi.Client({
 });
 client.connect();
 client.on('subscription', (channel, username) => {
-  onSub(channel, username, null);
+  onSub(channel, username, null, false);
 });
 client.on('resub', (channel, username) => {
-  onSub(channel, username, null);
+  onSub(channel, username, null, false);
 });
 client.on('subgift', (channel, username, streakMonths, recipient, methods, userstate) => {
-  onSub(channel, recipient, username);
+  onSub(channel, recipient, username, true);
 });
 client.on('message', (channel, tags, message, self) => {
   channel = channel.substring(1);
-  let delay = 1500;
+  let delay = 5000;
   if (self) return;
   if (stinkers.includes(channel)) return;
   if (
@@ -92,29 +100,39 @@ client.on('message', (channel, tags, message, self) => {
     message.toLowerCase() === `${process.env.BOT_USERNAME}, pogchamp` ||
     message.toLowerCase() === `${process.env.BOT_USERNAME} pogchamp`
   ) {
-    client.say(channel, `@${tags.username} PogChamp`);
-  }
-  if (
-    message.toLowerCase() === `@${process.env.BOT_USERNAME} vislaud` ||
-    message.toLowerCase() === `@${process.env.BOT_USERNAME}, vislaud` ||
-    message.toLowerCase() === `${process.env.BOT_USERNAME}, vislaud` ||
-    message.toLowerCase() === `${process.env.BOT_USERNAME} vislaud`
-  ) {
-    client.say(channel, `@${tags.username} PogChamp`);
-  }
-  if (channel === 'lukisteve' && message.startsWith('$m')) {
     if (stallTheCommand === true) return;
-    message = message.substring(3);
-    cleverbot(message, messages).then((response) => {
-      messages = [...messages, message];
-      if (messages.length >= 11) {
-        messages.shift();
-      }
-      client.say(channel, `@${tags.username} ${response}`);
-    });
+    client.say(channel, `@${tags.username} PogChamp`);
+    stallTheCommand = true;
+    setTimeout(() => {
+      stallTheCommand = false;
+    }, delay);
   }
-  stallTheCommand = true;
-  setTimeout(() => {
-    stallTheCommand = false;
-  }, delay);
+  //   if (
+  //     message.toLowerCase() === `@${process.env.BOT_USERNAME} vislaud` ||
+  //     message.toLowerCase() === `@${process.env.BOT_USERNAME}, vislaud` ||
+  //     message.toLowerCase() === `${process.env.BOT_USERNAME}, vislaud` ||
+  //     message.toLowerCase() === `${process.env.BOT_USERNAME} vislaud`
+  //   ) {
+  //     if (stallTheCommand === true) return;
+  //     client.say(channel, `@${tags.username} VisLaud`);
+  //     stallTheCommand = true;
+  //     setTimeout(() => {
+  //       stallTheCommand = false;
+  //     }, delay);
+  //   }
+  //   if (channel === 'lukisteve' && message.startsWith('$m')) {
+  //     if (stallTheCommand === true) return;
+  //     message = message.substring(3);
+  //     cleverbot(message, messages).then((response) => {
+  //       messages = [...messages, message];
+  //       if (messages.length >= 11) {
+  //         messages.shift();
+  //       }
+  //       client.say(channel, `@${tags.username} ${response}`);
+  //     });
+  //   }
+  //   stallTheCommand = true;
+  //   setTimeout(() => {
+  //     stallTheCommand = false;
+  //   }, delay);
 });
