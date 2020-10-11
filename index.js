@@ -14,7 +14,7 @@ db.connect((err) => {
   console.log('Mysql connected...');
 });
 const stinkers = ['overpow', 'randombrucetv'];
-const beOnChat = ['lukisteve', 'krawcu_'];
+const beOnChat = ['lukisteve', 'krawcu_', 'xayoo_', 'japczan', 'aki_997', 'popo'];
 var everyChannel = [...stinkers, ...beOnChat];
 var stallTheCommand = false;
 const onSub = (channel, username, gifter, gifted) => {
