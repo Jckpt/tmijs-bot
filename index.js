@@ -84,7 +84,7 @@ client.on('message', (channel, tags, message, self) => {
   const command = args.shift().toLowerCase();
   let username = args[0];
   let targetChannel = args[1];
-  if (command === 'sub' && !stallTheCommand) {
+  if (command === 'sub' && !stallTheCommand && args.length == 2) {
     console.log(`username: ${username}, targetChannel: ${targetChannel}`);
     if (everyChannel.includes(`#${targetChannel}`)) {
       let query = `SELECT nick, subscribed_to, is_expired FROM users WHERE nick="${username}" AND subscribed_to="${targetChannel}" AND is_expired="F";`;
@@ -93,17 +93,17 @@ client.on('message', (channel, tags, message, self) => {
         if (err) throw err;
         if (result.length > 0) {
           console.log(result);
-          client.say(channel, `@${tags.username}, ten użytkownik ma suba na tam tym kanale.`);
+          client.say(channel, `@${tags.username}, ten użytkownik ma subskrybencji na tam tym kanale. ✔️`);
         } else {
-          client.say(channel, `@${tags.username}, ten użytkownik nie ma suba na tam tym kanale.`);
+          client.say(channel, `@${tags.username}, ten użytkownik nie ma subskrybencji na tam tym kanale. ❌`);
         }
       });
     } else {
       client.say(channel, `@${tags.username}, nie mam zapisanych subskrybentów tego kanału.`);
     }
+    stallTheCommand = true;
+    setTimeout(() => {
+      stallTheCommand = false;
+    }, delay);
   }
-  stallTheCommand = true;
-  setTimeout(() => {
-    stallTheCommand = false;
-  }, delay);
 });
