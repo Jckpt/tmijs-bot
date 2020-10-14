@@ -13,9 +13,10 @@ db.connect((err) => {
   }
   console.log('Mysql connected...');
 });
-const stinkers = ['overpow', 'randombrucetv'];
-const beOnChat = ['lukisteve', 'krawcu_', 'xayoo_', 'japczan', 'aki_997', 'popo'];
-var everyChannel = [...stinkers, ...beOnChat];
+const stinkChat = ['overpow', 'randombrucetv'];
+const doChat = ['lukisteve', 'krawcu_'];
+const lurkChat = ['xayoo_', 'japczan', 'popo', 'aki_997', 'nieuczesana', 'nervarien', 'arquel', 'vysotzky', ];
+var everyChannel = [...stinkChat, ...doChat, ...lurkChat];
 var stallTheCommand = false;
 const onSub = (channel, username, gifter, gifted) => {
   channel = channel.substring(1);
@@ -39,8 +40,8 @@ const onSub = (channel, username, gifter, gifted) => {
     }
   });
 
-  if (stinkers.includes(channel)) {
-    beOnChat.forEach((chat) => {
+  if (stinkChat.includes(channel)) {
+    doChat.forEach((chat) => {
       if (gifted) {
         let reason = `Sub gift u ${channel} dla ${username} 🧀`;
         client.ban(chat, gifter, reason).catch((err) => {
@@ -78,11 +79,11 @@ client.on('subgift', (channel, username, streakMonths, recipient, methods, users
   onSub(channel, recipient, username, true);
 });
 client.on('message', (channel, tags, message, self) => {
-  if (self || stinkers.includes(channel) || !message.startsWith('$')) return;
+  if (self || !doChat.includes(channel) || !message.startsWith('$')) return;
   let delay = 5000;
   const args = message.slice(1).split(' ');
   const command = args.shift().toLowerCase();
-  let username = args[0];
+  let username = args[0].toLowerCase();
   let targetChannel = args[1];
   if (command === 'sub' && !stallTheCommand && args.length == 2) {
     console.log(`username: ${username}, targetChannel: ${targetChannel}`);
@@ -93,9 +94,9 @@ client.on('message', (channel, tags, message, self) => {
         if (err) throw err;
         if (result.length > 0) {
           console.log(result);
-          client.say(channel, `@${tags.username}, ten użytkownik ma subskrybencji na tam tym kanale. ✔️`);
+          client.say(channel, `@${tags.username}, ten użytkownik ma suba na tam tym kanale. ✔️`);
         } else {
-          client.say(channel, `@${tags.username}, ten użytkownik nie ma subskrybencji na tam tym kanale. ❌`);
+          client.say(channel, `@${tags.username}, ten użytkownik nie ma suba na tam tym kanale. ❌`);
         }
       });
     } else {
