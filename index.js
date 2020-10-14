@@ -14,9 +14,10 @@ db.connect((err) => {
   console.log('Mysql connected...');
 });
 const stinkChat = ['overpow', 'randombrucetv'];
-const doChat = ['lukisteve', 'krawcu_'];
-const lurkChat = ['xayoo_', 'japczan', 'popo', 'aki_997', 'nieuczesana', 'nervarien', 'arquel', 'vysotzky', ];
-var everyChannel = [...stinkChat, ...doChat, ...lurkChat];
+const doChat = ['lukisteve', 'krawcu_', 'xayoo_', 'japczan', 'popo', 'aki_997', 'vysotzky'];
+const lurkChat = [ 'nieuczesana', 'nervarien', 'arquel', 'paramaxil'];
+const dontSaveIntoDbChat = ['panna_alexandra01', 'koposova', 'maailinh', 'zony', 'keanelol'];
+var everyChannel = [...stinkChat, ...doChat, ...lurkChat, ...dontSaveIntoDbChat];
 var stallTheCommand = false;
 const onSub = (channel, username, gifter, gifted) => {
   channel = channel.substring(1);
@@ -31,6 +32,7 @@ const onSub = (channel, username, gifter, gifted) => {
         console.log(result);
       });
     } else {
+      if(dontSaveIntoDbChat.includes(`#${channel}`) || dontSaveIntoDbChat.includes(channel)) return;
       let query = 'INSERT INTO users SET ?, last_updated=now(), is_expired="F"';
       let user = { nick: username, subscribed_to: channel, gifted_by: gifter };
       db.query(query, user, (err, result) => {
@@ -57,7 +59,7 @@ const onSub = (channel, username, gifter, gifted) => {
   }
 };
 const client = new tmi.Client({
-  options: { debug: true },
+  options: { debug: false },
   connection: {
     reconnect: true,
     secure: true,
@@ -79,14 +81,13 @@ client.on('subgift', (channel, username, streakMonths, recipient, methods, users
   onSub(channel, recipient, username, true);
 });
 client.on('message', (channel, tags, message, self) => {
-  if (self || !doChat.includes(channel) || !message.startsWith('$')) return;
+  if (self || doChat.includes(channel) || !message.startsWith('$')) return;
   let delay = 5000;
   const args = message.slice(1).split(' ');
   const command = args.shift().toLowerCase();
   let username = args[0].toLowerCase();
   let targetChannel = args[1];
   if (command === 'sub' && !stallTheCommand && args.length == 2) {
-    console.log(`username: ${username}, targetChannel: ${targetChannel}`);
     if (everyChannel.includes(`#${targetChannel}`)) {
       let query = `SELECT nick, subscribed_to, is_expired FROM users WHERE nick="${username}" AND subscribed_to="${targetChannel}" AND is_expired="F";`;
       db.query(query, (err, result) => {
@@ -107,4 +108,8 @@ client.on('message', (channel, tags, message, self) => {
       stallTheCommand = false;
     }, delay);
   }
+});
+client.on("join", (channel, username, self) => {
+  if(username.toLowerCase()==='xayoo_')
+  client.say("Lukisteve", `${username} właśnie dołączył do czatu na kanale ${channel.substring(1)} O_o`);
 });
