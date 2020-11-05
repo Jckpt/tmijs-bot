@@ -4,7 +4,7 @@ require('dotenv').config();
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: '',
+  password: process.env.DB_PASS,
   database: 'twitchbot',
 });
 db.connect((err) => {
@@ -13,11 +13,10 @@ db.connect((err) => {
   }
   console.log('Mysql connected...');
 });
-const stinkChat = ['overpow', 'randombrucetv'];
-const doChat = ['lukisteve', 'krawcu_', 'xayoo_', 'japczan', 'popo', 'aki_997', 'vysotzky'];
-const lurkChat = [ 'nieuczesana', 'nervarien', 'arquel', 'paramaxil'];
+const doChat = ['lukisteve', 'krawcu_', 'japczan', 'popo', 'aki_997', 'vysotzky'];
+const lurkChat = [ 'nieuczesana', 'nervarien', 'arquel', 'paramaxil', 'overpow', 'randombrucetv', 'h2p_gucio', 'xayoo_'];
 const dontSaveIntoDbChat = ['panna_alexandra01', 'koposova', 'maailinh', 'zony', 'keanelol'];
-var everyChannel = [...stinkChat, ...doChat, ...lurkChat, ...dontSaveIntoDbChat];
+var everyChannel = [...doChat, ...lurkChat, ...dontSaveIntoDbChat];
 var stallTheCommand = false;
 const onSub = (channel, username, gifter, gifted) => {
   channel = channel.substring(1);
@@ -41,22 +40,6 @@ const onSub = (channel, username, gifter, gifted) => {
       });
     }
   });
-
-  if (stinkChat.includes(channel)) {
-    doChat.forEach((chat) => {
-      if (gifted) {
-        let reason = `Sub gift u ${channel} dla ${username} 🧀`;
-        client.ban(chat, gifter, reason).catch((err) => {
-          console.log(err);
-        });
-      } else {
-        let reason = `Sub u ${channel} 🧀`;
-        client.ban(chat, username, reason).catch((err) => {
-          console.log(err);
-        });
-      }
-    });
-  }
 };
 const client = new tmi.Client({
   options: { debug: false },
@@ -100,6 +83,22 @@ client.on('message', (channel, tags, message, self) => {
           client.say(channel, `@${tags.username}, ten użytkownik nie ma suba na tam tym kanale. ❌`);
         }
       });
+    } else {
+      client.say(channel, `@${tags.username}, nie mam zapisanych subskrybentów tego kanału.`);
+    }
+    stallTheCommand = true;
+    setTimeout(() => {
+      stallTheCommand = false;
+    }, delay);
+  }
+  if (command === 'subcount' && !stallTheCommand && args.length == 1) {
+    if (everyChannel.includes(`#${username}`)) {
+      let query = `select count(*) as ilosc from users where is_expired="f" and subscribed_to="${username}"`;
+      
+      db.query(query, (err, result) => {
+        if (err) throw err;
+        client.say(channel, `@${tags.username}, ${username} ma ${result[0].ilosc} subskrybentów`);
+      })
     } else {
       client.say(channel, `@${tags.username}, nie mam zapisanych subskrybentów tego kanału.`);
     }
